@@ -21,9 +21,7 @@ class Program
             {
                 Console.WriteLine("收到消息: " + message.Payload.GetType().Name);
             };
+            Console.ReadLine();
         }
-
-
-       
     }
 }

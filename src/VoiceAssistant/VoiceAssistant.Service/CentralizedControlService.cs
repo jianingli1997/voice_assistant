@@ -116,7 +116,7 @@ namespace VoiceAssistant.Service
             json = json.Trim();
             if (!json.StartsWith("{") || !json.EndsWith("}")) return;
 
-            var message = JsonConvert.DeserializeObject<Message<ReceivedPayloadBase>>(json, _jsonSettings);
+            Message<ReceivedPayloadBase>? message = JsonConvert.DeserializeObject<Message<ReceivedPayloadBase>>(json, _jsonSettings);
             switch (message?.Payload)
             {
                 case StatusReceivedPayload status:
