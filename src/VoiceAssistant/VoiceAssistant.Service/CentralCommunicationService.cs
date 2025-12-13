@@ -13,7 +13,7 @@ namespace VoiceAssistant.Service;
 public class CentralCommunicationService:IDisposable
 {
     public readonly WebSocketProtocol WebSocketProtocol;
-
+    public readonly SerialPortProtocol SerialPortProtocol;
     public CentralCommunicationService()
     {
         WebSocketProtocol = new WebSocketProtocol("ws://192.168.246.1:8080/ws");

@@ -1,0 +1,24 @@
+{
+  "Protocol": "SerialPort",
+  "SerialPortConfig": {
+    "PortName": "/dev/ttyUSB0",
+    "BaudRate": 115200,
+    "DataBits": 8,
+    "StopBits": 1,
+    "Parity": "None",
+    "FlowControl": "None"
+  },
+  "WebSocketConfig": {
+    "Url": "ws://127.0.0.1:8080",
+    "ReconnectIntervalMs": 5000
+  },
+  "TcpConfig": {
+    "Host": "192.168.1.100",
+    "Port": 5000,
+    "ReconnectIntervalMs": 5000
+  },
+  "UdpConfig": {
+    "Host": "192.168.1.100",
+    "Port": 6000
+  }
+}
