@@ -1,0 +1,40 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAssistant", "VoiceAssistant\VoiceAssistant.csproj", "{CC8C0312-65E0-4113-BD9A-96C50059998B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAssistant.Service", "VoiceAssistant.Service\VoiceAssistant.Service.csproj", "{F1E2DD5A-0B9C-434D-BF3F-FAC83DC3A2A0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAssistant.Communication", "VoiceAssistant.Communication\VoiceAssistant.Communication.csproj", "{0347BF99-256B-4BC3-B867-A2D69E4E33BA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAssistant.Utils", "VoiceAssistant.Utils\VoiceAssistant.Utils.csproj", "{A0635031-8553-4B81-B34D-AB5AB0AA46A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceAssistant.Log", "VoiceAssistant.Log\VoiceAssistant.Log.csproj", "{CD999D1A-2F84-473A-BF1A-D2A07771D655}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC8C0312-65E0-4113-BD9A-96C50059998B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC8C0312-65E0-4113-BD9A-96C50059998B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC8C0312-65E0-4113-BD9A-96C50059998B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC8C0312-65E0-4113-BD9A-96C50059998B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1E2DD5A-0B9C-434D-BF3F-FAC83DC3A2A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1E2DD5A-0B9C-434D-BF3F-FAC83DC3A2A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1E2DD5A-0B9C-434D-BF3F-FAC83DC3A2A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1E2DD5A-0B9C-434D-BF3F-FAC83DC3A2A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0347BF99-256B-4BC3-B867-A2D69E4E33BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0347BF99-256B-4BC3-B867-A2D69E4E33BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0347BF99-256B-4BC3-B867-A2D69E4E33BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0347BF99-256B-4BC3-B867-A2D69E4E33BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0635031-8553-4B81-B34D-AB5AB0AA46A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0635031-8553-4B81-B34D-AB5AB0AA46A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0635031-8553-4B81-B34D-AB5AB0AA46A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0635031-8553-4B81-B34D-AB5AB0AA46A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD999D1A-2F84-473A-BF1A-D2A07771D655}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD999D1A-2F84-473A-BF1A-D2A07771D655}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD999D1A-2F84-473A-BF1A-D2A07771D655}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD999D1A-2F84-473A-BF1A-D2A07771D655}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

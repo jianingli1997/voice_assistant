@@ -1,0 +1,74 @@
+# ----------------------------------------------------
+# 1. 编译和输出目录 (Build and Output Directories)
+# ----------------------------------------------------
+# 排除所有项目的 bin/ 和 obj/ 目录
+[Bb]in/
+[Oo]bj/
+
+# 排除测试结果
+TestResults/
+*.trx
+*.bak
+
+# ----------------------------------------------------
+# 2. 包管理和依赖项 (Package Management and Dependencies)
+# ----------------------------------------------------
+# 排除 NuGet 包缓存
+[Pp]ackages/
+# 排除用户本地的 NuGet 包和缓存 (如果使用 dotnet restore)
+.nuget/packages/
+.nuget/cache/
+
+# 排除 lock 文件 (如果使用 PackageReference 且不希望提交)
+# *.lock.json
+
+# ----------------------------------------------------
+# 3. IDE 和编辑器文件 (IDE and Editor Files)
+# ----------------------------------------------------
+
+# Visual Studio / Visual Studio Code
+*.vspscc
+*.vssscc
+*.suo
+*.user
+*.userossc
+*.sln.docstates
+# Visual Studio 解决方案用户选项文件
+*.sln.ide*
+
+# Rider IDE
+.idea/
+
+# Visual Studio Code 缓存文件
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+# 排除本地文件，保留其他 .vscode/ 文件
+.vscode/*.user
+
+.vs
+
+# ----------------------------------------------------
+# 4. 日志和临时文件 (Logs and Temporary Files)
+# ----------------------------------------------------
+# 排除 NLog 等生成的日志文件
+*.log
+*.tmp
+*.temp
+
+# ----------------------------------------------------
+# 5. 配置文件和密钥 (Configuration and Secrets)
+# ----------------------------------------------------
+# 排除可能包含敏感信息的本地配置文件 (如果使用 appsettings.Development.json 等)
+# appsettings.Development.json 
+# appsettings.Local.json 
+# *.user.config
+# *.localsettings
+
+# ----------------------------------------------------
+# 6. 其他 Windows 操作系统文件
+# ----------------------------------------------------
+[Tt]humbs.db
+# 排除 Windows 资源管理器文件
+Desktop.ini
