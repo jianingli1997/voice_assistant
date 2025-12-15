@@ -48,7 +48,38 @@ namespace VoiceAssistant.Service
             _protocol.OnError = ex => OnError?.Invoke(ex.Message);
             _protocol.OnDataReceived = HandleReceivedData;
         }
+        // 改为接收 byte[]
+        private void HandleReceivedData(byte[] frame)
+        {
+            // frame 已经是完整、未转义、包含 0xA5...0xA6 的原始帧
+            // 不再需要 Encoding.Default.GetBytes！
 
+            if (frame.Length < 10) return;
+
+            // 检查头尾（虽然 ProcessReceiveBuffer 已保证，但双重保险）
+            if (frame[0] != 0xA5 || frame[^1] != 0xA6) return;
+
+            byte msgType = frame[2];
+            ushort dataLen = BitConverter.ToUInt16(frame, 3); // 小端
+            ushort messageId = BitConverter.ToUInt16(frame, 5); // 小端
+
+            // 注意：校验码位置在 frame.Length - 2（倒数第二个）
+            // 如果你需要验证校验码，可以在这里加
+
+            switch ((MessageType)msgType)
+            {
+                case MessageType.Heartbeat:
+                    if (dataLen >= 1 && frame.Length >= 8)
+                        OnHeartbeatReceived?.Invoke(frame[7]);
+                    break;
+                case MessageType.Confirm:
+                    Console.WriteLine("收到确认消息，消息ID=" + messageId);
+                    break;
+                default:
+                    Console.WriteLine("收到未知消息类型: " + msgType);
+                    break;
+            }
+        }
         private void HandleReceivedData(string data)
         {
             // data 是串口收到的原始字符串
