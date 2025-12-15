@@ -6,6 +6,7 @@ using VoiceAssistant.Service.Entity;
 using VoiceAssistant.Service.Entity.Commands;
 using VoiceAssistant.Service.Entity.Payloads;
 using VoiceAssistant.Service.Utils;
+using VoiceAssistant.Utils;
 using Timer = System.Timers.Timer;
 
 namespace VoiceAssistant.Service
@@ -16,24 +17,31 @@ namespace VoiceAssistant.Service
         private readonly string _deviceType;
         private readonly MessageManager _messageManager = MessageManager.Instance;
 
-        private readonly Timer _heartbeatTimer = new Timer();
-        private readonly Timer _timeoutTimer = new Timer();
+        private readonly Timer _heartbeatTimer = new();
+        private readonly Timer _timeoutTimer = new();
         private DateTime _lastHeartbeatTime;
         private int _timeout;
 
-        private readonly JsonSerializerSettings _jsonSettings;
+        private static readonly JsonSerializerSettings _jsonSettings = new()
+        {
+            Converters = { new PayloadJsonConverter() }
+        };
 
         private WebSocketProtocol WebSocketProtocol => _centralCommunicationService.WebSocketProtocol;
 
         public event Action DisConnected;
         public event Action CheckInFinished;
         public event Action<Message<ResponseReceivedPayload>> MessageReceived;
+        
+        /// <summary>
+        /// 执行结果
+        /// </summary>
+        public event Action<bool> ExecutionResultReceived;
 
 
         public CentralizedControlService(CentralCommunicationService centralCommunicationService, string deviceType)
         {
-            _jsonSettings = new JsonSerializerSettings();
-            _jsonSettings.Converters.Add(new PayloadJsonConverter());
+           
             _centralCommunicationService = centralCommunicationService;
             _deviceType = deviceType;
 
@@ -62,6 +70,7 @@ namespace VoiceAssistant.Service
             try
             {
                 await WebSocketProtocol.SendStringAsync("ping");
+
             }
             catch (Exception ex)
             {
@@ -111,29 +120,38 @@ namespace VoiceAssistant.Service
 
         private void OnMessageReceived(string json)
         {
-            if (string.IsNullOrEmpty(json)) return;
-
-            json = json.Trim();
-            if (!json.StartsWith("{") || !json.EndsWith("}")) return;
-
-            Message<ReceivedPayloadBase>? message = JsonConvert.DeserializeObject<Message<ReceivedPayloadBase>>(json, _jsonSettings);
-            switch (message?.Payload)
+            try
             {
-                case StatusReceivedPayload status:
-                    int timeout = status.HeartbeatInterval * status.HeartbeatTimes;
-                    StartHeartbeatTimer(status.HeartbeatInterval, timeout);
-                    SendCheckInCommand();
-                    break;
+                if (string.IsNullOrEmpty(json)) return;
+                Console.WriteLine(json);
+                json = json.Trim();
+                if (!json.StartsWith("{") || !json.EndsWith("}")) return;
 
-                case ResponseReceivedPayload response:
-                    HandleEipResponse(new Message<ResponseReceivedPayload>
-                    {
-                        Id = message.Id,
-                        Payload = response,
-                        Timestamp = message.Timestamp
-                    });
-                    break;
+                Message<ReceivedPayloadBase>? result = JsonConvert.DeserializeObject<Message<ReceivedPayloadBase>>(json, _jsonSettings);
+                switch (result?.Payload)
+                {
+                    case StatusReceivedPayload status:
+                        int timeout = status.HeartbeatInterval * status.HeartbeatTimes;
+                        StartHeartbeatTimer(status.HeartbeatInterval, timeout);
+                        SendCheckInCommand();
+                        return;
+
+                    case ResponseReceivedPayload response:
+                        var message = new Message<ResponseReceivedPayload>
+                        {
+                            Id = result.Id,
+                            Payload = response,
+                            Timestamp = result.Timestamp
+                        };
+                        HandleEipResponse(message);
+                        break;
+                }
             }
+            catch (Exception ex)
+            {
+                LogHelper.WriteErrorLog(ex.Message, GetType().Name);
+            }
+          
         }
 
         private void HandleEipResponse(Message<ResponseReceivedPayload> msg)
@@ -151,7 +169,7 @@ namespace VoiceAssistant.Service
         private void HandleLocalCommandResponse(Message<ResponseReceivedPayload> msg)
         {
             var payload = msg.Payload;
-            if (payload != null && payload.ReturnCode == 0)
+            if (payload.ReturnCode == 0)
             {
                 _messageManager.MarkResponded(msg.Id, payload);
             }
@@ -159,6 +177,9 @@ namespace VoiceAssistant.Service
             {
                 MessageReceived?.Invoke(msg);
             }
+            
+            ExecutionResultReceived?.Invoke(payload.ReturnCode == 0);
+            
         }
 
         private async void SendCheckInCommand()

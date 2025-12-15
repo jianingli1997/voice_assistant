@@ -20,15 +20,13 @@ public sealed class ConsoleAppHost : IDisposable, IAsyncDisposable
     {
         ContainerBuilder builder = new ContainerBuilder();
 
-        // ✅ 只注册 Service
+        //  只注册 Service
         builder.RegisterModule<ServiceModule>();
 
         _container = builder.Build();
 
-        // ✅ 初始化 ServiceLocator
+        //  初始化 ServiceLocator
         AutofacServiceLocator.Initialize(_container);
-
-        LogHelper.WriteDebugLog("控制台服务容器初始化完成", nameof(ConsoleAppHost));
     }
 
     public void Dispose()
@@ -48,6 +46,6 @@ public class ServiceModule:Module
     {
         base.Load(builder);
         builder.RegisterType<CentralCommunicationService>().AsSelf().SingleInstance();
-        builder.RegisterType<CentralizedControlService>().AsSelf().WithParameter("deviceType","VoiceAssistant").SingleInstance();
+        builder.RegisterType<CentralizedControlService>().AsSelf().WithParameter("deviceType","VOICE").SingleInstance();
     }
 }

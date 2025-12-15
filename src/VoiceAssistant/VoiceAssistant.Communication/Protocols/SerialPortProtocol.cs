@@ -25,7 +25,6 @@ namespace VoiceAssistant.Communication.Protocols
             {
                 _serialPort.Open();
                 OnConnected?.Invoke();
-
                 // 启动读取线程
                 _running = true;
                 _readThread = new Thread(ReadLoop) { IsBackground = true };

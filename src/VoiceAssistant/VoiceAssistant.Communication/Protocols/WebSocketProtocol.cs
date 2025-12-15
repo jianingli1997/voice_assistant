@@ -14,187 +14,194 @@ using VoiceAssistant.Log;
 
 namespace VoiceAssistant.Communication.Protocols
 {
-    public class WebSocketProtocol(string uri) : IDisposable
-    {
-        private ClientWebSocket _socket;
-        private readonly CancellationTokenSource _cts = new();
-        private readonly Uri _uri = new(uri);
-        private bool _manuallyClosed;
-        private bool _isReconnecting;
-        private const int RetryDelay = 5000;
-        private readonly object _lock = new();
+   public class WebSocketProtocol(string uri):IDisposable
+ {
+     private ClientWebSocket _socket;
+     private readonly CancellationTokenSource _cts = new();
+     private readonly Uri _uri = new(uri);
 
-        public event Action Connected;
-        public event Action Disconnected;
-        public event Action<string> StringReceived;
-        public event Action<string> JsonReceived;
+     private bool _manuallyClosed; // 区分主动断开
+     private bool _isReconnecting; // 防止重复重连
+     private const int RetryDelay = 5000; // 重连间隔5s
+     public event Action Connected;
+     public event Action Disconnected;
+     public event Action<string> StringReceived;
+     public event Action<string> JsonReceived;
 
-        public async Task ConnectAsync()
-        {
-            lock (_lock)
-            {
-                if (_socket?.State == WebSocketState.Open)
-                    return;
+     private readonly object _lock = new();
 
-                _manuallyClosed = false;
-            }
+     public async Task ConnectAsync()
+     {
+         lock (_lock)
+         {
+             if (_socket is { State: WebSocketState.Open })
+                 return; // 已连接
+             _manuallyClosed = false;
+         }
 
-            await TryConnectAsync();
-        }
+         await TryConnectAsync();
+     }
 
-        private async Task TryConnectAsync()
-        {
-            while (!_cts.IsCancellationRequested && !_manuallyClosed)
-            {
-                try
-                {
-                    _socket = new ClientWebSocket();
-                    await _socket.ConnectAsync(_uri, _cts.Token);
+     private async Task TryConnectAsync()
+     {
+         while (!_cts.IsCancellationRequested && !_manuallyClosed)
+         {
+             try
+             {
+                 _socket = new ClientWebSocket();
+                 await _socket.ConnectAsync(_uri, _cts.Token);
 
-                    // 连接成功回调
-                    Connected?.Invoke();
+                 Connected?.Invoke();
+                 _ = Task.Run(ReceiveLoopAsync);
+                 return; // 成功后退出重连循环
+             }
+             catch (Exception ex)
+             {
+                 Console.WriteLine($"[WebSocket] 连接失败: {ex.Message}, {RetryDelay / 1000}s 后重试...");
+                 Disconnected?.Invoke();
+             }
 
-                    // 启动接收循环
-                    _ = Task.Run(ReceiveLoopAsync);
+             await Task.Delay(RetryDelay, _cts.Token);
+         }
+     }
 
-                    // 连接成功后退出循环
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[WebSocket] 连接失败: {ex.Message}, {RetryDelay / 1000}s 后重试...");
-                    Disconnected?.Invoke();
-                }
+     private async Task ReceiveLoopAsync()
+     {
+         byte[] buffer = new byte[8192];
 
-                await Task.Delay(RetryDelay, _cts.Token);
-            }
-        }
+         try
+         {
+             while (_socket.State == WebSocketState.Open && !_cts.Token.IsCancellationRequested)
+             {
+                 WebSocketReceiveResult result;
+                 int count = 0;
+                 do
+                 {
+                     result = await _socket.ReceiveAsync(
+                         new ArraySegment<byte>(buffer, count, buffer.Length - count), _cts.Token);
 
-        private async Task ReceiveLoopAsync()
-        {
-            var buffer = new byte[8192];
+                     if (result.MessageType == WebSocketMessageType.Close)
+                         break;
 
-            try
-            {
-                while (_socket.State == WebSocketState.Open && !_cts.Token.IsCancellationRequested)
-                {
-                    int count = 0;
-                    WebSocketReceiveResult result;
+                     count += result.Count;
+                 } while (!result.EndOfMessage);
 
-                    do
-                    {
-                        result = await _socket.ReceiveAsync(
-                            new ArraySegment<byte>(buffer, count, buffer.Length - count),
-                            _cts.Token);
+                 if (count == 0)
+                     continue;
 
-                        if (result.MessageType != WebSocketMessageType.Close)
-                            count += result.Count;
-                        else
-                            break;
-                    } while (!result.EndOfMessage);
+                 string message = Encoding.UTF8.GetString(buffer, 0, count).Trim();
+                 LogHelper.WriteDebugLog($"Receive:{message}","CC");
+                 Console.WriteLine($"Receive:{message}");
+                 if (message.StartsWith("{") && message.EndsWith("}"))
+                     JsonReceived?.Invoke(message);
+                 else
+                     StringReceived?.Invoke(message);
+             }
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"[WebSocket] 接收异常: {ex.Message}");
+         }
+         finally
+         {
+             Console.WriteLine("断连");
+             Disconnected?.Invoke();
 
-                    if (count <= 0) continue;
-                    string message = Encoding.UTF8.GetString(buffer, 0, count).Trim();
-                    LogHelper.WriteDebugLog("Receive:" + message, "CC");
+             if (!_manuallyClosed)
+             {
+                 Console.WriteLine("重连");
+                 await StartReconnectAsync(); // 非主动断开才重连
+}
+         }
+     }
 
-                    if (message.StartsWith("{") && message.EndsWith("}"))
-                        JsonReceived?.Invoke(message);
-                    else
-                        StringReceived?.Invoke(message);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("[WebSocket] 接收异常: " + ex.Message);
-            }
-            finally
-            {
-                Disconnected?.Invoke();
+     private async Task StartReconnectAsync()
+     {
+         lock (_lock)
+         {
+             if (_isReconnecting) return;
+             _isReconnecting = true;
+         }
 
-                if (!_manuallyClosed)
-                    await StartReconnectAsync();
-            }
-        }
+         try
+         {
+             await TryConnectAsync();
+         }
+         finally
+         {
+             _isReconnecting = false;
+         }
+     }
 
-        private async Task StartReconnectAsync()
-        {
-            lock (_lock)
-            {
-                if (_isReconnecting) return;
-                _isReconnecting = true;
-            }
+     public async Task SendStringAsync(string message)
+     {
+         if (_socket?.State != WebSocketState.Open)
+         {
+             LogHelper.WriteInfoLog($"WebsocketState","CC");
+             return;
+         }
+         LogHelper.WriteDebugLog($"Send:{message}", "CCSend");
+         byte[] data = Encoding.UTF8.GetBytes(message);
+         await _socket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, _cts.Token);
+     }
 
-            try
-            {
-                await TryConnectAsync();
-            }
-            finally
-            {
-                _isReconnecting = false;
-            }
-        }
+     public async Task SendJsonAsync(object obj)
+     {
+         string json = Newtonsoft.Json.JsonConvert.SerializeObject(obj);
+         await SendStringAsync(json);
+     }
 
-        public async Task SendStringAsync(string message)
-        {
-            if (_socket?.State != WebSocketState.Open)
-            {
-                LogHelper.WriteInfoLog("WebsocketState", "CC");
-                return;
-            }
+     public void Disconnect()
+     {
+         try
+         {
+             lock (_lock)
+             {
+                 _manuallyClosed = true;
+             }
 
-            var data = Encoding.UTF8.GetBytes(message);
-            await _socket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, _cts.Token);
-            LogHelper.WriteDebugLog("Send:" + message, "CC");
-        }
+             if (_socket?.State == WebSocketState.Open)
+             {
+                 _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None).Wait();
+             }
 
-        public async Task SendJsonAsync(object obj)
-        {
-            string json = JsonConvert.SerializeObject(obj);
-            await SendStringAsync(json);
-        }
+             _cts.Cancel();
+             Disconnected?.Invoke();
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"[WebSocket] 断开异常: {ex.Message}");
+         }
+     }
 
-        public void Disconnect()
-        {
-            try
-            {
-                lock (_lock)
-                    _manuallyClosed = true;
+     public async Task ForceReconnectAsync()
+     {
+         try
+         {
+             lock (_lock)
+             {
+                 _manuallyClosed = false; // 保证 finally 触发重连
+             }
 
-                if (_socket?.State == WebSocketState.Open)
-                    _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Closing", CancellationToken.None).Wait();
+             if (_socket?.State == WebSocketState.Open)
+             {
+                 await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "ForceReconnect",
+                     CancellationToken.None);
+             }
 
-                _cts.Cancel();
-                Disconnected?.Invoke();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("[WebSocket] 断开异常: " + ex.Message);
-            }
-        }
+             // 这里不需要再取消 CTS，因为想让重连生效
+             await StartReconnectAsync();
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"[WebSocket] ForceReconnect 异常: {ex.Message}");
+         }
+     }
 
-        public async Task ForceReconnectAsync()
-        {
-            try
-            {
-                lock (_lock)
-                    _manuallyClosed = false;
-
-                if (_socket?.State == WebSocketState.Open)
-                    await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "ForceReconnect",
-                        CancellationToken.None);
-
-                await StartReconnectAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("[WebSocket] ForceReconnect 异常: " + ex.Message);
-            }
-        }
-
-        public void Dispose()
-        {
-            _socket?.Dispose();
-            _cts?.Dispose();
-        }
-    }
+     public void Dispose()
+     {
+         _socket?.Dispose();
+         _cts?.Dispose();
+     }
+ }
 }

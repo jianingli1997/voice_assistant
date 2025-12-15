@@ -13,5 +13,8 @@ namespace VoiceAssistant.Service.Entity.Payloads;
 public class CheckInPayload
 {
     [JsonProperty("device_type")]
-    public string DeviceType { get; set; } = "VoiceAssistant";
+    public string DeviceType { get; set; }
+    
+    [JsonProperty("version")]
+    public string Version { get; set; } = "VA1.0.0.0";
 }

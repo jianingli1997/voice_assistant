@@ -14,6 +14,7 @@
     <ItemGroup>
       <ProjectReference Include="..\VoiceAssistant.Log\VoiceAssistant.Log.csproj" />
       <ProjectReference Include="..\VoiceAssistant.Service\VoiceAssistant.Service.csproj" />
+      <ProjectReference Include="..\VoiceAssistant.Utils\VoiceAssistant.Utils.csproj" />
     </ItemGroup>
 
 </Project>
