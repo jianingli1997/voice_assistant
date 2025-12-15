@@ -17,4 +17,8 @@
       <ProjectReference Include="..\VoiceAssistant.Utils\VoiceAssistant.Utils.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="audio\" />
+    </ItemGroup>
+
 </Project>

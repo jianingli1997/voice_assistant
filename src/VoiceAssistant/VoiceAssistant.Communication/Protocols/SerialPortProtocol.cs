@@ -20,7 +20,9 @@ namespace VoiceAssistant.Communication.Protocols
             {
                 ReadTimeout = 500
             };
-
+        }
+        public void Connect()
+        {
             try
             {
                 _serialPort.Open();

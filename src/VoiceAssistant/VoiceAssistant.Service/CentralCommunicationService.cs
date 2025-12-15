@@ -16,12 +16,25 @@ public class CentralCommunicationService:IDisposable
     public readonly SerialPortProtocol SerialPortProtocol;
     public CentralCommunicationService()
     {
-        Console.WriteLine($"CentralCommunicationService ctor: {GetHashCode()}");
-        WebSocketProtocol = new WebSocketProtocol("ws://192.168.20.67:8080/ws");
-        // WebSocketProtocol = new WebSocketProtocol("ws://192.168.20.121:8080/ws");
-        _ = WebSocketProtocol.ConnectAsync();
+        // SerialPortProtocol = new SerialPortProtocol("");
+        // WebSocketProtocol = new WebSocketProtocol("ws://192.168.20.67:8080/ws");
+        WebSocketProtocol = new WebSocketProtocol("ws://192.168.20.121:8080/ws");
+        // InitSerialProtocol();
+        InitWebsocketProtocol();
+        
     }
 
+    private void InitSerialProtocol()
+    {
+        SerialPortProtocol.Connect();
+    }
+
+    private void InitWebsocketProtocol()
+    {
+        _ = WebSocketProtocol.ConnectAsync();
+        
+    }
+    
     public void Dispose()
     {
         WebSocketProtocol.Dispose();

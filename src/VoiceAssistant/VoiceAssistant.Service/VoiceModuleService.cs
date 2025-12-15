@@ -8,6 +8,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using VoiceAssistant.Communication.Protocols;
@@ -17,7 +18,22 @@ namespace VoiceAssistant.Service
     public class VoiceModuleService : IDisposable
     {
         private readonly SerialPortProtocol _protocol;
-        private readonly byte _userId = 0x01;
+        
+        /// <summary>
+        /// 固定消息头
+        /// </summary>
+        private const byte CommandHead = 0xA5;
+        
+        /// <summary>
+        /// 固定消息尾
+        /// </summary>
+        private const byte CommandTail = 0xA6;
+        
+        
+        /// <summary>
+        /// 用户ID 固定
+        /// </summary>
+        private const byte UserId = 0x01;
         private ushort _messageIdCounter = 0;
 
         public Action OnHandshakeSuccess { get; set; }
@@ -36,7 +52,6 @@ namespace VoiceAssistant.Service
         private void HandleReceivedData(string data)
         {
             // data 是串口收到的原始字符串
-            // 实际上我们需要按字节处理
             byte[] bytes = Encoding.Default.GetBytes(data);
 
             if (bytes.Length < 10) return; // 长度不足，丢弃
@@ -48,13 +63,13 @@ namespace VoiceAssistant.Service
             ushort messageId = BitConverter.ToUInt16(bytes, 5); // 小端模式
             ushort dataLen = BitConverter.ToUInt16(bytes, 3);
 
-            switch (msgType)
+            switch ((MessageType)msgType)
             {
-                case 0x02: // 心跳消息
+                case MessageType.Heartbeat: // 心跳消息
                     if (dataLen >= 1)
                         OnHeartbeatReceived?.Invoke(bytes[7]);
                     break;
-                case 0xFF: // 确认消息
+                case MessageType.Confirm: // 确认消息
                     Console.WriteLine("收到确认消息，消息ID=" + messageId);
                     break;
                 default:
@@ -98,7 +113,7 @@ namespace VoiceAssistant.Service
 
             List<byte> buffer = new List<byte>();
             buffer.Add(0xA5);         // 消息头
-            buffer.Add(_userId);      // 用户ID
+            buffer.Add(UserId);      // 用户ID
             buffer.Add(msgType);       // 消息类型
             buffer.AddRange(BitConverter.GetBytes(dataLen)); // 数据长度，小端
             buffer.AddRange(BitConverter.GetBytes(msgId));   // 消息ID，小端
@@ -151,4 +166,31 @@ namespace VoiceAssistant.Service
             _protocol?.Dispose();
         }
     }
+}
+
+
+/// <summary>
+/// 云知声消息类型
+/// </summary>
+public enum MessageType
+{
+    /// <summary>
+    /// 握手
+    /// </summary>
+    Handshake = 0x01,
+    
+    /// <summary>
+    /// 心跳
+    /// </summary>
+    Heartbeat = 0x02,
+    
+    /// <summary>
+    /// 语音消息
+    /// </summary>
+    Voice = 0x03,
+    
+    /// <summary>
+    /// 确认消息
+    /// </summary>
+    Confirm = 0x04
 }

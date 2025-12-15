@@ -47,5 +47,6 @@ public class ServiceModule:Module
         base.Load(builder);
         builder.RegisterType<CentralCommunicationService>().AsSelf().SingleInstance();
         builder.RegisterType<CentralizedControlService>().AsSelf().WithParameter("deviceType","VOICE").SingleInstance();
+        // builder.RegisterType<VoiceModuleService>().AsSelf().WithParameter("portName","COM1").SingleInstance();
     }
 }
